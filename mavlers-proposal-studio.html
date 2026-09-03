@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mavlers Proposal Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  :root{
+    --silver:#c0c0c0;
+    --gray:#808080;
+    --white:#ffffff;
+    --black:#0a0a0a;
+    --light:#dfdfdf;
+    --navy:#000080;
+    --navy2:#1084d0;
+    --teal:#008080;           /* desktop */
+    --brand:#0f9d8f;          /* client-controlled; used on the SOW doc */
+    --brand-ink:#0a6d63;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'MS Sans Serif','Tahoma','Segoe UI',sans-serif;
+    font-size:11px;
+    background:var(--teal);
+    color:#000;
+    overflow:hidden;
+  }
+  /* ---------- Win98 primitives ---------- */
+  .raised{ background:var(--silver);
+    box-shadow: inset -1px -1px var(--black), inset 1px 1px var(--white), inset -2px -2px var(--gray), inset 2px 2px var(--light); }
+  .sunken{ background:var(--white);
+    box-shadow: inset -1px -1px var(--white), inset 1px 1px var(--gray), inset -2px -2px var(--light), inset 2px 2px var(--black); }
+  .engrave{ box-shadow: inset -1px -1px var(--white), inset 1px 1px var(--gray); }
+
+  button{ font-family:inherit; font-size:11px; color:#000; background:var(--silver); border:none; min-width:70px;
+    padding:5px 12px; cursor:pointer; position:relative;
+    box-shadow: inset -1px -1px var(--black), inset 1px 1px var(--white), inset -2px -2px var(--gray), inset 2px 2px var(--light); }
+  button:active,button.pressed{ box-shadow: inset -1px -1px var(--white), inset 1px 1px var(--black), inset -2px -2px var(--light), inset 2px 2px var(--gray); padding:6px 11px 4px 13px; }
+  button:focus{ outline:1px dotted #000; outline-offset:-4px; }
+  button[disabled]{ color:var(--gray); text-shadow:1px 1px var(--white); pointer-events:none; }
+
+  input[type=text],input[type=number],input[type=password],textarea,select{
+    font-family:inherit; font-size:11px; background:#fff; border:none; padding:4px 5px; color:#000;
+    box-shadow: inset -1px -1px var(--white), inset 1px 1px var(--gray), inset -2px -2px var(--light), inset 2px 2px var(--black); }
+  textarea{resize:vertical; line-height:1.5;}
+  input:focus,textarea:focus,select:focus{outline:none;}
+  select{ padding:3px 4px; }
+
+  /* ---------- Desktop layout ---------- */
+  #desktop{ height:100vh; padding:6px 6px 34px; display:flex; }
+  .window{ display:flex; flex-direction:column; width:100%; padding:3px; }
+  .title-bar{ background:linear-gradient(90deg,var(--navy),var(--navy2)); display:flex; align-items:center; padding:2px 2px 2px 3px; }
+  .title-bar .ico{ width:15px;height:15px; margin-right:4px; display:grid;place-items:center; }
+  .title-bar-text{ color:#fff; font-weight:bold; font-size:11px; flex:1; white-space:nowrap; }
+  .title-bar-controls{ display:flex; gap:2px; }
+  .title-bar-controls button{ min-width:0; width:16px; height:14px; padding:0; display:grid; place-items:center; font-size:9px; font-weight:bold; line-height:1; }
+  .menu-bar{ display:flex; gap:2px; padding:2px 1px; }
+  .menu-bar span{ padding:2px 7px; cursor:default; }
+  .menu-bar span:hover{ background:var(--navy); color:#fff; }
+  .menu-bar u{ text-decoration:underline; }
+
+  .win-body{ flex:1; display:grid; grid-template-columns:150px 1fr; gap:3px; padding:3px; min-height:0; }
+  .nav{ display:flex; flex-direction:column; padding:3px; gap:2px; }
+  .nav .grp-cap{ font-weight:bold; padding:4px 4px 2px; color:#000; }
+  .navbtn{ text-align:left; min-width:0; width:100%; display:flex; align-items:center; gap:7px; padding:6px 8px; }
+  .navbtn .ic{ width:16px; height:16px; flex:0 0 auto; }
+  .navbtn.active{ box-shadow: inset -1px -1px var(--white), inset 1px 1px var(--black), inset -2px -2px var(--light), inset 2px 2px var(--gray); font-weight:bold; }
+  .nav .spacer{ flex:1; }
+  .nav .conn-status{ font-size:10px; padding:5px 4px; color:#000; }
+  .nav .conn-status b{ display:block; margin-bottom:2px; }
+  .dot{ display:inline-block;width:7px;height:7px;border-radius:1px;margin-right:4px;vertical-align:baseline; }
+  .dot.on{ background:#0a0; } .dot.off{ background:#a00; }
+
+  .content{ overflow:auto; padding:10px 12px; }
+  .content::-webkit-scrollbar{ width:16px; height:16px; }
+  .content::-webkit-scrollbar-track{ background:#d9d5cc; box-shadow:inset 1px 1px var(--gray); }
+  .content::-webkit-scrollbar-thumb{ background:var(--silver); box-shadow: inset -1px -1px var(--black), inset 1px 1px var(--white), inset -2px -2px var(--gray), inset 2px 2px var(--light); }
+
+  /* ---------- Taskbar ---------- */
+  #taskbar{ position:fixed; left:0; right:0; bottom:0; height:30px; padding:3px 3px; display:flex; align-items:center; gap:5px; z-index:60; }
+  #startbtn{ font-weight:bold; display:flex; align-items:center; gap:5px; min-width:0; padding:4px 9px 4px 6px; }
+  #startbtn .flag{ width:16px;height:14px; display:inline-block; background:
+      linear-gradient(135deg,#ff3b3b 0 45%,transparent 45%),
+      linear-gradient(135deg,transparent 55%,#2bd44a 55%),
+      #f5c400; background-blend-mode:normal; box-shadow:inset 0 0 0 1px #0006; }
+  .task-open{ flex:0 0 auto; min-width:150px; text-align:left; font-weight:bold; box-shadow: inset -1px -1px var(--white), inset 1px 1px var(--black), inset -2px -2px var(--light), inset 2px 2px var(--gray); }
+  #taskbar .grow{ flex:1; }
+  #clock{ font-size:11px; padding:5px 9px; min-width:74px; text-align:center; }
+
+  /* ---------- Content pieces ---------- */
+  h2.sec{ font-size:11px; font-weight:bold; margin:0 0 8px; }
+  .desc{ margin:0 0 10px; }
+  .group{ padding:14px 14px 6px; margin-bottom:12px; position:relative; }
+  .group > legend, .group .cap{ position:absolute; top:-7px; left:9px; background:var(--silver); padding:0 5px; font-weight:bold; }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .field{ margin-bottom:10px; }
+  .field label{ display:block; margin-bottom:4px; }
+  .field input,.field select,.field textarea{ width:100%; }
+  .hint{ color:#333; }
+  .toolbar{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .spacer-h{ flex:1; }
+
+  /* stats */
+  .stat-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
+  .stat{ padding:8px 10px; background:#fff; }
+  .stat .k{ color:#333; }
+  .stat .v{ font-size:16px; font-weight:bold; margin-top:4px; font-variant-numeric:tabular-nums; }
+
+  /* listview table */
+  .listview{ background:#fff; padding:2px; }
+  .lv-head{ display:grid; grid-template-columns:2.2fr 1.4fr 1fr 1.1fr; gap:2px; margin-bottom:2px; }
+  .lv-head span{ background:var(--silver); padding:4px 8px; font-weight:bold;
+    box-shadow: inset -1px -1px var(--black), inset 1px 1px var(--white), inset -2px -2px var(--gray), inset 2px 2px var(--light); }
+  .lv-row{ display:grid; grid-template-columns:2.2fr 1.4fr 1fr 1.1fr; gap:2px; padding:5px 8px; cursor:pointer; }
+  .lv-row:hover{ background:var(--navy); color:#fff; }
+  .lv-row .money{ font-variant-numeric:tabular-nums; }
+  .lv-row small{ display:block; color:#555; }
+  .lv-row:hover small{ color:#cfe0ff; }
+  .status-txt b{ font-weight:bold; }
+
+  /* connectors */
+  .conn-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .conn{ padding:14px 10px; text-align:center; min-width:0; display:flex; flex-direction:column; align-items:center; gap:7px; }
+  .conn .logo{ width:34px; height:34px; display:grid; place-items:center; font-weight:bold; color:#fff; font-size:15px; }
+  .conn b{ font-size:11px; } .conn span{ color:#333; font-size:10px; }
+  .readai .logo{ background:#5b34d6; }
+  .fathom .logo{ background:#1a73e8; }
+  .upload .logo{ background:#00794d; }
+
+  .drop{ background:#fff; padding:18px; text-align:center; margin-top:8px;
+    box-shadow: inset -1px -1px var(--white), inset 1px 1px var(--gray), inset -2px -2px var(--light), inset 2px 2px var(--black); }
+  .drop.over{ background:#eef; outline:2px dashed var(--navy); outline-offset:-6px; }
+  .drop .link{ color:var(--navy); text-decoration:underline; cursor:pointer; }
+  .filepill{ display:inline-block; margin-top:8px; padding:3px 8px; background:var(--silver);
+    box-shadow: inset -1px -1px var(--black), inset 1px 1px var(--white); }
+  .filepill button{ min-width:0; padding:0 4px; margin-left:4px; }
+  .divider-or{ display:flex; align-items:center; gap:8px; color:#333; margin:10px 0; }
+  .divider-or::before,.divider-or::after{ content:""; height:2px; flex:1; box-shadow: 0 1px var(--white), inset 0 1px var(--gray); }
+
+  /* ---------- SOW document ---------- */
+  .doc-wrap{ display:grid; grid-template-columns:1fr 168px; gap:12px; align-items:start; }
+  @media(max-width:900px){ .doc-wrap{ grid-template-columns:1fr; } }
+  .doc-side{ display:flex; flex-direction:column; gap:6px; position:sticky; top:0; }
+  .doc-side button{ width:100%; }
+  .doc-side .note{ font-size:10px; padding:8px; background:#fff; box-shadow: inset -1px -1px var(--white), inset 1px 1px var(--gray); }
+  .paper{ background:#fff; padding:4px; }
+  .doc{ background:#fff; font-family:'Source Serif 4',Georgia,serif; color:#1c1f26; }
+  .doc-head{ background:var(--brand); color:#fff; padding:26px 34px; }
+  .doc-head .co{ display:flex; align-items:center; gap:11px; margin-bottom:16px; }
+  .doc-head .co .logo{ width:36px;height:36px; background:rgba(255,255,255,.18); display:grid; place-items:center; font-weight:bold; overflow:hidden; border-radius:3px; }
+  .doc-head .co .logo img{ width:100%;height:100%;object-fit:cover; }
+  .doc-head .co b{ font-size:14px; font-family:'MS Sans Serif',sans-serif; display:block; }
+  .doc-head .co span{ font-size:11px; opacity:.9; font-family:'MS Sans Serif',sans-serif; }
+  .doc-head .title{ font-size:27px; font-weight:700; line-height:1.1; }
+  .doc-head .meta{ display:flex; gap:22px; flex-wrap:wrap; margin-top:14px; font-family:'MS Sans Serif',sans-serif; font-size:11px; }
+  .doc-head .meta b{ display:block; opacity:.75; font-weight:normal; margin-bottom:2px; }
+  .doc-body{ padding:28px 34px 34px; font-size:14px; line-height:1.62; }
+  .doc-body h3{ font-family:'MS Sans Serif',sans-serif; font-size:11px; font-weight:bold; letter-spacing:.03em; text-transform:uppercase;
+    color:var(--brand-ink); margin:24px 0 9px; padding-bottom:5px; border-bottom:1px solid #ddd; }
+  .doc-body h3:first-child{ margin-top:0; }
+  .doc-body p{ margin:0 0 10px; } .doc-body ul{ margin:0 0 10px; padding-left:20px; } .doc-body li{ margin-bottom:5px; }
+  .editable:hover{ background:#fbfbf5; } .editable:focus{ background:#fff; outline:2px solid var(--brand); }
+  .ptab{ width:100%; border-collapse:collapse; font-family:'MS Sans Serif',sans-serif; font-size:12px; }
+  .ptab th{ text-align:left; padding:7px 8px; border-bottom:2px solid #999; font-size:10px; color:#555; text-transform:uppercase; }
+  .ptab th.r,.ptab td.r{ text-align:right; font-variant-numeric:tabular-nums; }
+  .ptab td{ padding:8px; border-bottom:1px solid #e2e2e2; }
+  .ptab tr.total td{ border-top:2px solid #000; border-bottom:none; font-weight:bold; font-size:14px; padding-top:9px; }
+  .phase{ display:flex; gap:11px; margin-bottom:9px; font-family:'MS Sans Serif',sans-serif; }
+  .phase .idx{ width:22px;height:22px; flex:0 0 auto; background:var(--brand); color:#fff; display:grid; place-items:center; font-weight:bold; font-size:11px; border-radius:2px; }
+  .phase b{ font-size:12px; } .phase .dur{ font-size:11px; color:#555; }
+
+  /* ---------- Settings ---------- */
+  .setting-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 0; }
+  .setting-row + .setting-row{ box-shadow: inset 0 1px var(--gray), inset 0 2px var(--white); }
+  .setting-row .lbl b{ font-weight:bold; } .setting-row .lbl p{ margin:2px 0 0; color:#333; max-width:360px; }
+  .swatches{ display:flex; gap:5px; } .swatch{ width:22px;height:22px; cursor:pointer;
+    box-shadow: inset -1px -1px var(--black), inset 1px 1px var(--white); }
+  .logo-prev{ width:46px;height:46px; display:grid; place-items:center; color:#fff; font-weight:bold; font-size:18px; overflow:hidden; background:var(--brand); }
+  .logo-prev img{ width:100%;height:100%;object-fit:cover; }
+  .toggle{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
+  .toggle input{ width:14px;height:14px; }
+
+  /* ---------- Modal / dialog ---------- */
+  #overlay{ position:fixed; inset:0; background:rgba(0,0,0,.28); display:none; z-index:80; align-items:center; justify-content:center; }
+  #overlay.show{ display:flex; }
+  .dialog{ width:400px; max-width:92vw; padding:3px; }
+  .dialog .win-body{ display:block; grid-template-columns:none; padding:14px; }
+  .dialog .dlg-actions{ display:flex; justify-content:flex-end; gap:6px; margin-top:14px; }
+
+  /* boot splash */
+  #boot{ position:fixed; inset:0; background:#000; color:#fff; z-index:200; display:flex; align-items:center; justify-content:center; font-family:'Courier New',monospace; }
+  #boot .b{ width:380px; }
+  #boot .barwrap{ height:16px; background:#111; border:1px solid #333; margin-top:12px; }
+  #boot .bar{ height:100%; width:0; background:#0f9d8f; transition:width .1s linear; }
+  #boot small{ color:#8a8f98; }
+
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+
+<!-- boot splash for flavor -->
+<div id="boot"><div class="b">
+  <div style="font-size:20px;font-weight:bold;letter-spacing:1px">Mavlers&nbsp;Proposal&nbsp;Studio<span style="color:#0f9d8f">98</span></div>
+  <small>Starting Mavlers Proposal Studio...</small>
+  <div class="barwrap"><div class="bar" id="bootbar"></div></div>
+</div></div>
+
+<div id="desktop">
+  <div class="window raised">
+    <div class="title-bar">
+      <div class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg></div>
+      <div class="title-bar-text">Mavlers Proposal Studio — [Statement of Work Generator]</div>
+      <div class="title-bar-controls">
+        <button title="Minimize" onclick="joke('minimize')">_</button>
+        <button title="Maximize" onclick="joke('maximize')">□</button>
+        <button title="Close" onclick="joke('close')">✕</button>
+      </div>
+    </div>
+    <div class="menu-bar">
+      <span onclick="menuNew()"><u>F</u>ile</span>
+      <span onclick="toast('Edit menu — demo','info')"><u>E</u>dit</span>
+      <span onclick="toast('View menu — demo','info')"><u>V</u>iew</span>
+      <span onclick="about()"><u>H</u>elp</span>
+    </div>
+
+    <div class="win-body">
+      <!-- NAV -->
+      <div class="nav raised">
+        <div class="grp-cap">Go to</div>
+        <button class="navbtn active" data-view="dashboard">
+          <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
+          Dashboard</button>
+        <button class="navbtn" data-view="new">
+          <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></span>
+          New proposal</button>
+        <button class="navbtn" data-view="settings">
+          <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3"/></svg></span>
+          Branding</button>
+
+        <div class="spacer"></div>
+        <div class="grp-cap">Connections</div>
+        <div class="conn-status engrave" id="connStatus"></div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="content sunken" id="scroller">
+        <section id="view-dashboard"></section>
+        <section id="view-new" hidden></section>
+        <section id="view-detail" hidden></section>
+        <section id="view-settings" hidden></section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Taskbar -->
+<div id="taskbar" class="raised">
+  <button id="startbtn" onclick="about()"><span class="flag"></span>Start</button>
+  <button class="task-open" onclick="go('dashboard')">📄 Proposal Studio</button>
+  <div class="grow"></div>
+  <div id="clock" class="engrave">--:--</div>
+</div>
+
+<!-- Modal overlay -->
+<div id="overlay"><div class="dialog window raised" id="dialog"></div></div>
+
+<script>
+/* ============================================================
+   STATE  (in-memory — resets on reload; perfect for a repeatable demo)
+   ============================================================ */
+const CUR = () => state.settings.currency;
+function money(n){ return CUR() + Number(n||0).toLocaleString('en-US'); }
+
+const state = {
+  settings:{
+    company:'Mavlers',
+    tagline:'Digital marketing, email & web',
+    footer:'Mavlers · hello@mavlers.com · This proposal is valid for 30 days from the issue date.',
+    brand:'#0f9d8f',
+    currency:'$',
+    logo:null,
+    useAI:false, provider:'anthropic', apiKey:'', model:'claude-sonnet-5'
+  },
+  connectors:{ readai:{on:true, token:''}, fathom:{on:true, token:''} }, // "on" = demo-connected
+  proposals:[],
+  currentId:null,
+  draft:{ transcriptFile:null, transcriptText:'', prefill:null, source:'' }
+};
+
+/* ---------- Project presets ---------- */
+const PRESETS = {
+  'Email marketing programme':{
+    scope:['Audit of current email programme and ESP configuration','Lifecycle and automation flow mapping','Modular master template design and build','Segmentation and campaign calendar strategy','A/B testing and deliverability optimisation','Monthly performance reporting'],
+    deliverables:['Email programme audit','Responsive master template kit','Configured automation flows','Segmentation & calendar plan','Monthly performance report'],
+    phases:[['Audit & strategy',0.2],['Design & build',0.35],['Automation setup',0.3],['Optimise & report',0.15]],
+    lines:[['Audit & strategy',0.2],['Template design & build',0.3],['Automation & ESP setup',0.35],['Reporting & optimisation',0.15]]
+  },
+  'Website design & build':{
+    scope:['Discovery workshop and sitemap definition','UX wireframes for all core templates','High-fidelity UI design in the brand system','Front-end build and CMS integration','Responsive QA across devices and browsers','Launch, redirects and analytics setup'],
+    deliverables:['Approved sitemap and wireframes','Design files for all page templates','Responsive website on your CMS','Editor training session and handover doc'],
+    phases:[['Discovery & strategy',0.15],['Design',0.35],['Build & integration',0.35],['QA & launch',0.15]],
+    lines:[['UX & information architecture',0.18],['Visual design',0.27],['Front-end development',0.4],['QA, launch & handover',0.15]]
+  },
+  'Marketing retainer':{
+    scope:['Monthly content and campaign planning','Creative production across agreed channels','Paid and organic campaign management','Performance reporting and monthly review'],
+    deliverables:['Rolling content calendar','Monthly creative assets','Campaign performance dashboard','Monthly strategy review call'],
+    phases:[['Onboarding & audit',0.2],['Ramp-up month 1',0.3],['Steady-state delivery',0.35],['Review & optimise',0.15]],
+    lines:[['Strategy & planning',0.25],['Creative production',0.35],['Campaign management',0.3],['Reporting & review',0.1]]
+  },
+  'AI / automation build':{
+    scope:['Process mapping and opportunity audit','Solution design and tool selection','Integration and workflow automation build','Prompt / model configuration and evaluation','Testing, rollout and team enablement'],
+    deliverables:['Automation blueprint and success metrics','Configured, connected workflows','Evaluation report and guardrails','Enablement session and runbook'],
+    phases:[['Audit & design',0.2],['Build & integrate',0.45],['Evaluate & tune',0.2],['Rollout & enablement',0.15]],
+    lines:[['Discovery & solution design',0.2],['Integration & build',0.45],['Evaluation & tuning',0.2],['Enablement & support',0.15]]
+  },
+  'Brand identity':{
+    scope:['Brand discovery and positioning workshop','Logo suite and core mark exploration','Colour, typography and visual language','Brand guidelines document','Core collateral and social templates'],
+    deliverables:['Primary and secondary logo files (vector)','Brand guidelines PDF','Editable social and stationery templates'],
+    phases:[['Discovery',0.2],['Concept & exploration',0.4],['Refinement',0.25],['Guidelines & handover',0.15]],
+    lines:[['Strategy & discovery',0.2],['Identity design',0.45],['Guidelines',0.2],['Collateral & templates',0.15]]
+  },
+  'Consulting engagement':{
+    scope:['Kick-off and current-state assessment','Stakeholder interviews and analysis','Findings, recommendations and roadmap','Executive readout and prioritisation'],
+    deliverables:['Assessment report','Prioritised recommendations roadmap','Executive presentation'],
+    phases:[['Assess',0.35],['Analyse',0.35],['Recommend',0.3]],
+    lines:[['Assessment & research',0.4],['Analysis & synthesis',0.35],['Roadmap & readout',0.25]]
+  }
+};
+const TYPES = Object.keys(PRESETS);
+
+/* ---------- Sample meeting transcripts (used by connectors in demo mode) ---------- */
+const SAMPLES = {
+  readai:
+`Read.ai Meeting Report — "Lumen Retail x Mavlers — Email revamp"
+Date: 2 Sep 2026   Duration: 34 min   Participants: 4
+
+Sarah (Lumen Retail): Thanks for jumping on. So the big thing for us is our email programme with Klaviyo. Open rates have dropped and the welcome flow feels dated.
+Marco (Mavlers): Understood. Are we talking a full rebuild of the automations or mostly the templates?
+Sarah: Both really. We want a fresh modular template set and the key flows redone — welcome, abandoned cart, post-purchase.
+Sarah: Budget-wise we've got around $28,000 approved for this phase.
+Marco: And timeline?
+Sarah: We'd love it live in about 8 weeks, before the holiday push.
+Priya (Lumen Retail): Deliverability is a concern too — a lot lands in promotions.
+Marco: Noted, we'll bake in deliverability and A/B testing. I'll turn this into a statement of work.`,
+  fathom:
+`Fathom Call Summary — "Harborline Logistics — Website rebuild"
+Recorded: 1 Sep 2026 · 41 min · Fathom AI Notetaker
+
+[00:02] James (Harborline): Our website is old and not mobile friendly. We need a full redesign and rebuild.
+[00:08] Alex (Mavlers): Great. Any CMS preference, or open to a recommendation?
+[00:09] James: Open to it, but the team needs to edit pages easily. A tracking / quote page would be ideal too.
+[00:17] James: We're a logistics company, so trust and speed matter more than flashy design.
+[00:22] James: Budget is roughly $45k. We'd want it done in about 10 weeks.
+[00:30] Alex: Perfect — I'll put together a scope covering design, build, CMS and launch.`
+};
+
+/* ---------- Seed proposals themed to Mavlers ---------- */
+function seed(){
+  state.proposals = [
+    buildProposal({client:'Lumen Retail', industry:'Ecommerce', type:'Email marketing programme', budget:28000, timeline:'8 weeks', requirements:'Rebuild the Klaviyo email programme: modular templates plus welcome, abandoned-cart and post-purchase flows. Improve deliverability and open rates.', status:'ready', created:'2026-09-02'}),
+    buildProposal({client:'Harborline Logistics', industry:'Logistics', type:'Website design & build', budget:45000, timeline:'10 weeks', requirements:'Full website redesign and rebuild, mobile-friendly, easy-to-edit CMS, and a quote/tracking page. Trust and speed over flashy design.', status:'draft', created:'2026-09-01'}),
+    buildProposal({client:'Pace Fitness', industry:'Health & fitness', type:'AI / automation build', budget:32000, timeline:'7 weeks', requirements:'Automate inbound lead handling — capture, qualify and route enquiries into the CRM, with automated follow-up sequences.', status:'accepted', created:'2026-08-20'})
+  ];
+}
+
+/* ============================================================
+   DEMO GENERATOR
+   ============================================================ */
+function buildProposal(inp){
+  const p = Object.assign({ id:'p'+Math.random().toString(36).slice(2,9), status:'draft', created:new Date().toISOString().slice(0,10) }, inp);
+  const preset = PRESETS[p.type] || PRESETS['Consulting engagement'];
+  const budget = Number(p.budget)||20000; p.value=budget;
+  const goal=(p.requirements||'').trim();
+  p.overview = `${state.settings.company} is pleased to submit this statement of work to ${p.client}`+
+    `${p.industry?', a '+p.industry.toLowerCase()+' organisation':''}, for a ${p.type.toLowerCase()} engagement. `+
+    (goal?`Based on our conversations, ${p.client} is looking to ${firstSentence(goal).toLowerCase()}. `:'')+
+    `This document outlines the scope, deliverables, timeline and investment required to deliver the work over an estimated ${p.timeline||'agreed'} period.`;
+  p.scope=preset.scope.slice(); p.deliverables=preset.deliverables.slice();
+  const extra=extraFromRequirements(goal); if(extra) p.scope.push(extra);
+  const weeks=parseWeeks(p.timeline);
+  p.timeline_phases=preset.phases.map(([name,frac])=>({name,dur:fmtDur(Math.max(1,Math.round(weeks*frac)))}));
+  let running=0;
+  p.pricing=preset.lines.map(([name,frac])=>{ let amt=Math.round(budget*frac/100)*100; running+=amt; return {name,amount:amt}; });
+  if(p.pricing.length) p.pricing[p.pricing.length-1].amount += (budget-running);
+  p.assumptions=['Feedback and approvals are provided within two business days at each stage.','A single point of contact is nominated on the client side.','Content, brand assets and access required for delivery are supplied on time.','Work outside this scope is handled through a written change request.'];
+  p.terms=[`50% of the total fee (${money(Math.round(budget*0.5))}) is invoiced on acceptance; the balance on completion.`,'Invoices are payable within 14 days. Late payment may pause active work.','Ownership of final approved deliverables transfers to the client on full payment.','Either party may terminate with 14 days written notice; work completed to date is billable.'];
+  return p;
+}
+function firstSentence(t){ const m=t.match(/[^.!?]+[.!?]?/); return (m?m[0]:t).trim().replace(/\.$/,''); }
+function extraFromRequirements(t){ if(!t) return null; const s=t.trim(); if(s.length<12) return null; return 'Specific requirement noted: '+firstSentence(s)+'.'; }
+function parseWeeks(t){ if(!t) return 8; const w=t.match(/(\d+)\s*week/i); if(w) return +w[1]; const m=t.match(/(\d+)\s*month/i); if(m) return +m[1]*4; const n=t.match(/(\d+)/); return n?+n[1]:8; }
+function fmtDur(w){ return w>=8?Math.round(w/4)+(Math.round(w/4)===1?' month':' months'):w+(w===1?' week':' weeks'); }
+
+/* ---------- Transcript → prefill ---------- */
+function extractFromTranscript(text){
+  const out={};
+  const nm=text.match(/([A-Z][A-Za-z0-9&'\-]+(?:\s+[A-Z][A-Za-z0-9&'\-]+){0,2})\s*(?:x|×)\s*Mavlers/);
+  if(nm) out.client=nm[1].trim();
+  if(!out.client){ const p=text.match(/\(([^)]+?)\):/); if(p&&!/mavlers/i.test(p[1])) out.client=p[1].trim(); }
+  const bg=text.match(/\$\s?([\d,]{3,})/); if(bg){ out.budget=+bg[0].replace(/[^\d]/g,''); }
+  else { const k=text.match(/([\d]{1,3})\s?k\b/i); if(k) out.budget=+k[1]*1000; }
+  const tl=text.match(/(\d+)\s*(week|month)s?/i); if(tl) out.timeline=tl[1]+' '+tl[2].toLowerCase()+'s';
+  const low=text.toLowerCase();
+  if(/klaviyo|email|welcome flow|abandoned cart|deliverab/.test(low)) out.type='Email marketing programme';
+  else if(/website|site|redesign|rebuild|homepage|cms/.test(low)) out.type='Website design & build';
+  else if(/automat|ai |workflow|lead handling|route/.test(low)) out.type='AI / automation build';
+  else if(/rebrand|logo|identity/.test(low)) out.type='Brand identity';
+  else if(/retainer|ongoing|monthly campaign/.test(low)) out.type='Marketing retainer';
+  else out.type='Website design & build';
+  out.requirements=text.replace(/\s+/g,' ').trim().slice(0,600);
+  return out;
+}
+
+/* ---------- Optional live AI ---------- */
+async function aiGenerate(inp){
+  const sys='You are a proposal writer. Return ONLY valid JSON matching: {"overview":string,"scope":string[],"deliverables":string[],"timeline_phases":[{"name":string,"dur":string}],"pricing":[{"name":string,"amount":number}],"assumptions":string[],"terms":string[]}. Amounts are plain numbers, summing to about the budget.';
+  const user=`Sender: ${state.settings.company}\nClient: ${inp.client}\nIndustry: ${inp.industry}\nType: ${inp.type}\nBudget: ${state.settings.currency}${inp.budget}\nTimeline: ${inp.timeline}\nRequirements:\n${inp.requirements}`;
+  let text;
+  if(state.settings.provider==='anthropic'){
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'content-type':'application/json','x-api-key':state.settings.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:state.settings.model||'claude-sonnet-5',max_tokens:2000,system:sys,messages:[{role:'user',content:user}]})});
+    const d=await r.json(); if(d.error) throw new Error(d.error.message); text=(d.content||[]).map(c=>c.text||'').join('');
+  } else {
+    const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',
+      headers:{'content-type':'application/json','authorization':'Bearer '+state.settings.apiKey},
+      body:JSON.stringify({model:state.settings.model||'gpt-4o-mini',messages:[{role:'system',content:sys},{role:'user',content:user}],response_format:{type:'json_object'}})});
+    const d=await r.json(); if(d.error) throw new Error(d.error.message); text=d.choices?.[0]?.message?.content||'';
+  }
+  const json=JSON.parse(text.replace(/```json|```/g,'').trim());
+  const p=Object.assign(buildProposal(inp),json); p.value=inp.budget; return p;
+}
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+const $=s=>document.querySelector(s);
+const views=['dashboard','new','detail','settings'];
+function go(view){
+  views.forEach(v=>$('#view-'+v).hidden=v!==view);
+  document.querySelectorAll('.navbtn').forEach(n=>n.classList.toggle('active',n.dataset.view===view));
+  if(view==='dashboard') renderDashboard();
+  if(view==='new') renderNew();
+  if(view==='settings') renderSettings();
+  $('#scroller').scrollTop=0;
+}
+function label(s){ return s==='ready'?'Ready to send':s==='accepted'?'Accepted':'Draft'; }
+
+function renderConnStatus(){
+  const c=state.connectors;
+  $('#connStatus').innerHTML =
+    `<b>Read.ai <span class="dot ${c.readai.on?'on':'off'}"></span>${c.readai.on?'Connected':'Off'}</b>`+
+    `<b>Fathom <span class="dot ${c.fathom.on?'on':'off'}"></span>${c.fathom.on?'Connected':'Off'}</b>`;
+}
+
+function renderDashboard(){
+  const ps=state.proposals;
+  const total=ps.reduce((s,p)=>s+(p.value||0),0);
+  const won=ps.filter(p=>p.status==='accepted').reduce((s,p)=>s+(p.value||0),0);
+  $('#view-dashboard').innerHTML=`
+    <div class="toolbar" style="margin-bottom:10px">
+      <button class="pressed" onclick="void 0" style="pointer-events:none">Dashboard</button>
+      <button onclick="go('new')">＋ New proposal</button>
+      <div class="spacer-h"></div>
+      <span>${ps.length} item(s)</span>
+    </div>
+    <div class="stat-row">
+      <div class="stat sunken"><div class="k">Open proposals</div><div class="v">${ps.length}</div></div>
+      <div class="stat sunken"><div class="k">Pipeline value</div><div class="v">${money(total)}</div></div>
+      <div class="stat sunken"><div class="k">Accepted</div><div class="v">${money(won)}</div></div>
+      <div class="stat sunken"><div class="k">Avg. deal size</div><div class="v">${money(ps.length?Math.round(total/ps.length):0)}</div></div>
+    </div>
+    <div class="listview sunken">
+      <div class="lv-head"><span>Client</span><span>Industry</span><span>Value</span><span>Status</span></div>
+      ${ps.map(p=>`<div class="lv-row" data-id="${p.id}">
+        <div>${esc(p.client)}<small>${esc(p.type)}</small></div>
+        <div>${esc(p.industry||'—')}</div>
+        <div class="money">${money(p.value)}</div>
+        <div class="status-txt"><b>${label(p.status)}</b></div>
+      </div>`).join('')}
+    </div>`;
+  $('#view-dashboard').querySelectorAll('.lv-row').forEach(r=>r.onclick=()=>openProposal(r.dataset.id));
+}
+
+/* ---------- New proposal ---------- */
+function renderNew(){
+  const d=state.draft;
+  $('#view-new').innerHTML=`
+    <div style="max-width:680px">
+      <div class="group engrave">
+        <span class="cap">Import from a call</span>
+        <p class="desc">Pull a recent meeting from a connector, or drop a transcript file.</p>
+        <div class="conn-grid">
+          <button class="conn readai" onclick="openConnector('readai')"><span class="logo">R</span><b>Read.ai</b><span>${state.connectors.readai.on?'Connected':'Connect'}</span></button>
+          <button class="conn fathom" onclick="openConnector('fathom')"><span class="logo">F</span><b>Fathom</b><span>${state.connectors.fathom.on?'Connected':'Connect'}</span></button>
+          <button class="conn upload" onclick="$('#fileInput').click()"><span class="logo">↥</span><b>Upload</b><span>.txt .vtt .srt</span></button>
+        </div>
+        <div class="drop" id="drop">
+          Drag &amp; drop a transcript here, or <span class="link" id="browse">browse</span>
+          <div id="fileState"></div>
+        </div>
+        <input type="file" id="fileInput" accept=".txt,.vtt,.srt,.md,text/plain" hidden />
+        <div class="divider-or">or paste it</div>
+        <div class="field"><textarea id="transcript" rows="5" placeholder="Paste the call transcript or notes here...">${esc(d.transcriptText)}</textarea></div>
+        <button id="readBtn">✷ Pull details from transcript</button>
+        ${d.source?`<span style="margin-left:8px">Source: <b>${esc(d.source)}</b></span>`:''}
+      </div>
+
+      <div class="group engrave">
+        <span class="cap">Project brief</span>
+        <p class="desc">Check the details, then generate. Everything stays editable.</p>
+        <div class="grid2">
+          <div class="field"><label>Client name</label><input id="f-client" type="text" placeholder="e.g. Lumen Retail"></div>
+          <div class="field"><label>Industry</label><input id="f-industry" type="text" placeholder="e.g. Ecommerce"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Project type</label><select id="f-type">${TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+          <div class="field"><label>Timeline</label><input id="f-timeline" type="text" placeholder="e.g. 8 weeks"></div>
+        </div>
+        <div class="field"><label>Budget (number only)</label><input id="f-budget" type="number" placeholder="e.g. 28000"></div>
+        <div class="field"><label>Requirements &amp; goals</label><textarea id="f-req" rows="4" placeholder="What does the client need?"></textarea></div>
+        <div class="toolbar">
+          <button id="genBtn" style="font-weight:bold">▶ Generate statement of work</button>
+          <div class="spacer-h"></div>
+          <span>${state.settings.useAI?'Live AI: ON':'Mode: Instant demo'}</span>
+        </div>
+      </div>
+    </div>`;
+  applyDraftToForm();
+  const drop=$('#drop'), fi=$('#fileInput');
+  $('#browse').onclick=()=>fi.click();
+  fi.onchange=e=>{ if(e.target.files[0]) loadFile(e.target.files[0]); };
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+  drop.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) loadFile(f); });
+  $('#readBtn').onclick=pullFromTranscript;
+  $('#genBtn').onclick=generateFromForm;
+  renderFileState();
+}
+function applyDraftToForm(){
+  const p=state.draft.prefill; if(!p) return;
+  const set=(id,v)=>{ const el=$(id); if(el&&v) el.value=v; };
+  set('#f-client',p.client); set('#f-industry',p.industry); set('#f-type',p.type);
+  set('#f-timeline',p.timeline); set('#f-budget',p.budget); set('#f-req',p.requirements);
+}
+function renderFileState(){
+  const fs=$('#fileState'); if(!fs) return; const f=state.draft.transcriptFile;
+  fs.innerHTML=f?`<div class="filepill">📄 ${esc(f)}<button id="rmFile" title="remove">×</button></div>`:'';
+  const rm=$('#rmFile'); if(rm) rm.onclick=()=>{ state.draft.transcriptFile=null; state.draft.transcriptText=''; state.draft.source=''; if($('#transcript'))$('#transcript').value=''; renderFileState(); };
+}
+function loadFile(file){
+  const rd=new FileReader();
+  rd.onload=()=>{ state.draft.transcriptText=String(rd.result||''); state.draft.transcriptFile=file.name; state.draft.source='File upload';
+    if($('#transcript'))$('#transcript').value=state.draft.transcriptText; renderFileState(); toast('Transcript loaded — now pull the details','ok'); };
+  rd.readAsText(file);
+}
+async function pullFromTranscript(){
+  const txt=($('#transcript').value||'').trim();
+  if(!txt){ toast('Import or paste a transcript first','warn'); return; }
+  state.draft.transcriptText=txt;
+  const b=$('#readBtn'); const o=b.innerHTML; b.innerHTML='⏳ Reading...'; b.disabled=true;
+  try{ await wait(450); state.draft.prefill=extractFromTranscript(txt); applyDraftToForm(); toast('Pulled the brief from the call','ok'); }
+  catch(e){ toast('Could not read that transcript','warn'); }
+  finally{ b.innerHTML=o; b.disabled=false; }
+}
+function readForm(){ return {
+  client:$('#f-client').value.trim()||'New client', industry:$('#f-industry').value.trim(),
+  type:$('#f-type').value, timeline:$('#f-timeline').value.trim()||'8 weeks',
+  budget:Number($('#f-budget').value)||20000, requirements:$('#f-req').value.trim() }; }
+async function generateFromForm(){
+  const inp=readForm(); const b=$('#genBtn'); const o=b.innerHTML; b.innerHTML='⏳ Generating...'; b.disabled=true;
+  try{
+    let p;
+    if(state.settings.useAI&&state.settings.apiKey){ p=await aiGenerate(inp); }
+    else { await wait(600); p=buildProposal(inp); }
+    state.proposals.unshift(p); state.draft={transcriptFile:null,transcriptText:'',prefill:null,source:''};
+    openProposal(p.id); toast('Statement of work ready','ok');
+  }catch(e){ toast('AI failed — check key. Using demo mode.','warn'); const p=buildProposal(inp); state.proposals.unshift(p); openProposal(p.id); }
+  finally{ b.innerHTML=o; b.disabled=false; }
+}
+
+/* ---------- Connectors ---------- */
+function openConnector(which){
+  const c=state.connectors[which];
+  const name=which==='readai'?'Read.ai':'Fathom';
+  const bodyExtra=which==='readai'
+    ? 'Pulls your latest Read.ai meeting report (transcript + summary).'
+    : 'Pulls your latest Fathom call summary and transcript.';
+  showDialog(name+' Connector', `
+    <p style="margin:0 0 10px">${bodyExtra}</p>
+    <div class="group engrave" style="margin-bottom:12px">
+      <span class="cap">Status</span>
+      <p style="margin:0"><span class="dot ${c.on?'on':'off'}"></span> ${c.on?'Connected (demo workspace)':'Not connected'}</p>
+      <button style="margin-top:10px;font-weight:bold" id="fetchBtn">⭳ Fetch latest meeting</button>
+    </div>
+    <div class="group engrave">
+      <span class="cap">Use a live account</span>
+      <p style="margin:0 0 8px">Paste your ${name} API token to pull from your real workspace. Live pulls run through your backend when deployed.</p>
+      <div class="field"><label>${name} API token</label><input type="password" id="connToken" value="${esc(c.token)}" placeholder="paste token"></div>
+    </div>
+    <div class="dlg-actions">
+      <button onclick="closeDialog()">Cancel</button>
+      <button style="font-weight:bold" id="connSave">Save</button>
+    </div>`);
+  $('#fetchBtn').onclick=()=>fetchMeeting(which);
+  $('#connSave').onclick=()=>{ c.token=$('#connToken').value.trim(); c.on=true; renderConnStatus(); closeDialog(); toast(name+' connection saved','ok'); if(!$('#view-new').hidden) renderNew(); };
+}
+async function fetchMeeting(which){
+  const name=which==='readai'?'Read.ai':'Fathom';
+  const btn=$('#fetchBtn'); const o=btn.innerHTML; btn.innerHTML='⏳ Fetching from '+name+'...'; btn.disabled=true;
+  try{
+    await wait(750);                         // demo: pull bundled sample
+    const text=SAMPLES[which];
+    state.draft.transcriptText=text; state.draft.transcriptFile=null; state.draft.source=name;
+    state.draft.prefill=extractFromTranscript(text);
+    closeDialog();
+    if($('#view-new').hidden){ go('new'); } else { renderNew(); }
+    // ensure the pulled transcript + prefill are visible
+    if($('#transcript')) $('#transcript').value=text;
+    applyDraftToForm();
+    toast('Pulled latest '+name+' meeting — brief filled in','ok');
+  }catch(e){ toast('Fetch failed','warn'); }
+  finally{ if($('#fetchBtn')){ btn.innerHTML=o; btn.disabled=false; } }
+}
+
+/* ---------- Proposal detail ---------- */
+function openProposal(id){ state.currentId=id; go('detail'); renderDetail(); }
+function currentP(){ return state.proposals.find(p=>p.id===state.currentId); }
+function renderDetail(){
+  const p=currentP(); if(!p){ go('dashboard'); return; }
+  const s=state.settings; const total=p.pricing.reduce((a,l)=>a+Number(l.amount||0),0);
+  const logo=s.logo?`<img src="${s.logo}" alt="">`:(s.company||'M').slice(0,1);
+  $('#view-detail').innerHTML=`
+    <div class="toolbar" style="margin-bottom:10px">
+      <button onclick="go('dashboard')">◀ Back</button>
+      <button onclick="dupProposal()">Duplicate</button>
+      <select id="statusSel"><option value="draft">Status: Draft</option><option value="ready">Status: Ready to send</option><option value="accepted">Status: Accepted</option></select>
+      <div class="spacer-h"></div>
+      <button id="pdfBtn" style="font-weight:bold">⭳ Export as PDF</button>
+    </div>
+    <div class="doc-wrap">
+      <div class="paper sunken">
+        <div class="doc" id="docNode">
+          <div class="doc-head">
+            <div class="co"><div class="logo">${logo}</div><div><b>${esc(s.company)}</b><span>${esc(s.tagline||'')}</span></div></div>
+            <div class="title">Statement of Work</div>
+            <div class="meta">
+              <div><b>Prepared for</b>${esc(p.client)}</div>
+              <div><b>Date</b>${fmtDate(p.created)}</div>
+              <div><b>Timeline</b>${esc(p.timeline||'—')}</div>
+              <div><b>Total investment</b>${money(total)}</div>
+            </div>
+          </div>
+          <div class="doc-body">
+            <h3>Overview</h3><p class="editable" contenteditable="true">${esc(p.overview)}</p>
+            <h3>Scope of work</h3><ul class="editable" contenteditable="true">${p.scope.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+            <h3>Deliverables</h3><ul class="editable" contenteditable="true">${p.deliverables.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+            <h3>Timeline</h3>
+            ${p.timeline_phases.map((ph,i)=>`<div class="phase"><div class="idx">${i+1}</div><div><b class="editable" contenteditable="true">${esc(ph.name)}</b> — <span class="dur editable" contenteditable="true">${esc(ph.dur)}</span></div></div>`).join('')}
+            <h3>Investment</h3>
+            <table class="ptab"><thead><tr><th>Item</th><th class="r">Amount</th></tr></thead><tbody>
+              ${p.pricing.map(l=>`<tr><td class="editable" contenteditable="true">${esc(l.name)}</td><td class="r">${money(l.amount)}</td></tr>`).join('')}
+              <tr class="total"><td>Total</td><td class="r">${money(total)}</td></tr>
+            </tbody></table>
+            <h3>Assumptions</h3><ul class="editable" contenteditable="true">${p.assumptions.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+            <h3>Terms &amp; conditions</h3><ul class="editable" contenteditable="true">${p.terms.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+            <p style="margin-top:22px;color:#666;font-size:11px;font-family:'MS Sans Serif',sans-serif">${esc(s.footer||'')}</p>
+          </div>
+        </div>
+      </div>
+      <div class="doc-side">
+        <div class="note">Tip: click any body text to edit it in place. The banner uses your brand colour &amp; logo from Branding.</div>
+      </div>
+    </div>`;
+  const sel=$('#statusSel'); sel.value=p.status; sel.onchange=()=>{ p.status=sel.value; toast('Status updated','ok'); };
+  $('#pdfBtn').onclick=exportPDF;
+}
+function dupProposal(){ const p=currentP(); const c=Object.assign({},p,{id:'p'+Math.random().toString(36).slice(2,9),status:'draft',client:p.client+' (copy)'}); state.proposals.unshift(c); openProposal(c.id); toast('Duplicated','ok'); }
+
+async function exportPDF(){
+  const p=currentP(); const node=$('#docNode').cloneNode(true);
+  node.querySelectorAll('[contenteditable]').forEach(n=>n.removeAttribute('contenteditable'));
+  const b=$('#pdfBtn'); const o=b.innerHTML; b.innerHTML='⏳ Building PDF...'; b.disabled=true;
+  try{
+    if(window.html2pdf){
+      await html2pdf().set({margin:0,filename:(p.client||'proposal').replace(/\s+/g,'-').toLowerCase()+'-SOW.pdf',
+        image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
+        jsPDF:{unit:'pt',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy']}}).from(node).save();
+      toast('PDF downloaded','ok');
+    } else throw new Error('lib');
+  }catch(e){ const w=window.open('','_blank'); w.document.write('<html><head><title>SOW</title></head><body>'+$('#docNode').outerHTML+'</body></html>'); w.document.close(); w.focus(); setTimeout(()=>w.print(),300); toast('Opened print view — choose Save as PDF','ok'); }
+  finally{ b.innerHTML=o; b.disabled=false; }
+}
+
+/* ---------- Settings ---------- */
+function renderSettings(){
+  const s=state.settings; const logoPrev=s.logo?`<img src="${s.logo}">`:(s.company||'M').slice(0,1);
+  $('#view-settings').innerHTML=`
+    <div style="max-width:620px">
+      <div class="group engrave"><span class="cap">Company</span>
+        <div class="grid2">
+          <div class="field"><label>Company name</label><input id="s-company" type="text" value="${esc(s.company)}"></div>
+          <div class="field"><label>Currency symbol</label><input id="s-currency" type="text" maxlength="3" value="${esc(s.currency)}"></div>
+        </div>
+        <div class="field"><label>Tagline</label><input id="s-tagline" type="text" value="${esc(s.tagline)}"></div>
+        <div class="field"><label>Proposal footer</label><textarea id="s-footer" rows="2">${esc(s.footer)}</textarea></div>
+      </div>
+      <div class="group engrave"><span class="cap">Brand</span>
+        <div class="setting-row"><div class="lbl"><b>Logo</b><p>Used on the app and the SOW banner.</p></div>
+          <div class="row" style="align-items:center"><div class="logo-prev" id="logoPrev">${logoPrev}</div><button id="logoBtn">Upload...</button><input type="file" id="logoInput" accept="image/*" hidden></div></div>
+        <div class="setting-row"><div class="lbl"><b>Brand colour</b><p>Lands on the proposal banner and accents.</p></div>
+          <div class="row" style="align-items:center">
+            <div class="swatches">${['#0f9d8f','#000080','#7c3aed','#be123c','#ea580c','#111111'].map(c=>`<div class="swatch" data-c="${c}" style="background:${c}"></div>`).join('')}</div>
+            <input type="text" id="s-brand" value="${esc(s.brand)}" style="width:80px" maxlength="7"></div></div>
+      </div>
+      <div class="group engrave"><span class="cap">AI engine</span>
+        <p class="desc">Demo mode generates instantly with no key (recommended for calls). Flip on to route through a live model.</p>
+        <label class="toggle" style="margin-bottom:8px"><input type="checkbox" id="s-useai" ${s.useAI?'checked':''}> Use live AI</label>
+        <div id="aiFields" ${s.useAI?'':'hidden'}>
+          <div class="grid2">
+            <div class="field"><label>Provider</label><select id="s-provider"><option value="anthropic" ${s.provider==='anthropic'?'selected':''}>Anthropic (Claude)</option><option value="openai" ${s.provider==='openai'?'selected':''}>OpenAI</option></select></div>
+            <div class="field"><label>Model</label><input id="s-model" type="text" value="${esc(s.model)}"></div>
+          </div>
+          <div class="field"><label>API key (stays in your browser)</label><input id="s-key" type="password" value="${esc(s.apiKey)}" placeholder="paste key"></div>
+        </div>
+      </div>
+      <div class="group engrave"><span class="cap">Connectors</span>
+        <div class="setting-row"><div class="lbl"><b>Read.ai</b><p>Pull meeting transcripts &amp; summaries.</p></div><button onclick="openConnector('readai')">${state.connectors.readai.on?'Manage':'Connect'}</button></div>
+        <div class="setting-row"><div class="lbl"><b>Fathom</b><p>Pull call summaries &amp; transcripts.</p></div><button onclick="openConnector('fathom')">${state.connectors.fathom.on?'Manage':'Connect'}</button></div>
+      </div>
+      <div class="toolbar"><button id="saveBtn" style="font-weight:bold">Save settings</button></div>
+    </div>`;
+  $('#logoBtn').onclick=()=>$('#logoInput').click();
+  $('#logoInput').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{ s.logo=r.result; $('#logoPrev').innerHTML=`<img src="${s.logo}">`; }; r.readAsDataURL(f); };
+  document.querySelectorAll('.swatch').forEach(sw=>sw.onclick=()=>{ $('#s-brand').value=sw.dataset.c; });
+  $('#s-useai').onchange=e=>{ $('#aiFields').hidden=!e.target.checked; };
+  $('#saveBtn').onclick=saveSettings;
+}
+function saveSettings(){
+  const s=state.settings;
+  s.company=$('#s-company').value.trim()||'Company'; s.currency=$('#s-currency').value.trim()||'$';
+  s.tagline=$('#s-tagline').value.trim(); s.footer=$('#s-footer').value.trim();
+  s.brand=$('#s-brand').value.trim()||'#0f9d8f';
+  s.useAI=$('#s-useai').checked;
+  if(s.useAI){ s.provider=$('#s-provider').value; s.model=$('#s-model').value.trim(); s.apiKey=$('#s-key').value.trim(); }
+  applyBrand(); toast('Settings saved','ok'); go('dashboard');
+}
+
+/* ---------- Dialog ---------- */
+function showDialog(title,bodyHTML){
+  $('#dialog').innerHTML=`
+    <div class="title-bar"><div class="title-bar-text">${esc(title)}</div>
+      <div class="title-bar-controls"><button onclick="closeDialog()" title="Close">✕</button></div></div>
+    <div class="win-body">${bodyHTML}</div>`;
+  $('#overlay').classList.add('show');
+}
+function closeDialog(){ $('#overlay').classList.remove('show'); $('#dialog').innerHTML=''; }
+$('#overlay') && (document.getElementById('overlay').onclick=e=>{ if(e.target.id==='overlay') closeDialog(); });
+
+function about(){ showDialog('About Mavlers Proposal Studio', `
+  <div class="row" style="gap:12px;align-items:flex-start">
+    <div style="width:42px;height:42px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:bold;font-size:20px;border-radius:3px">M</div>
+    <div><b>Mavlers Proposal Studio</b><br>Version 98 · Demo build<br><br>
+    Turns a call transcript into a branded statement of work in seconds. Connects to Read.ai and Fathom.</div>
+  </div>
+  <div class="dlg-actions"><button onclick="closeDialog()" style="font-weight:bold">OK</button></div>`); }
+function menuNew(){ go('new'); }
+function joke(kind){
+  if(kind==='close') showDialog('Mavlers Proposal Studio', `<p style="margin:0 0 6px">It's a demo — there's nothing to close. 🙂</p><div class="dlg-actions"><button onclick="closeDialog()" style="font-weight:bold">OK</button></div>`);
+  else toast('This is a demo window','info');
+}
+
+/* ---------- Brand ---------- */
+function applyBrand(){
+  const s=state.settings;
+  document.documentElement.style.setProperty('--brand',s.brand);
+  document.documentElement.style.setProperty('--brand-ink',shade(s.brand,-22));
+}
+function shade(hex,pct){ const {r,g,b}=hx(hex); const f=c=>Math.max(0,Math.min(255,Math.round(c*(1+pct/100)))); return rgb(f(r),f(g),f(b)); }
+function hx(h){ h=(h||'#0f9d8f').replace('#',''); if(h.length===3)h=h.split('').map(c=>c+c).join(''); return {r:parseInt(h.slice(0,2),16)||15,g:parseInt(h.slice(2,4),16)||157,b:parseInt(h.slice(4,6),16)||143}; }
+function rgb(r,g,b){ return '#'+[r,g,b].map(c=>c.toString(16).padStart(2,'0')).join(''); }
+
+/* ---------- Utils ---------- */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function fmtDate(d){ try{ return new Date(d).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return d; } }
+let toastT;
+function toast(msg,kind){
+  let t=document.getElementById('toastbox');
+  if(!t){ t=document.createElement('div'); t.id='toastbox';
+    t.style.cssText='position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:120;padding:8px 14px;font-size:11px;';
+    t.className='raised'; document.body.appendChild(t); }
+  const mark=kind==='ok'?'✓ ':kind==='warn'?'⚠ ':'';
+  t.textContent=mark+msg; t.style.display='block';
+  clearTimeout(toastT); toastT=setTimeout(()=>{ t.style.display='none'; },2600);
+}
+function tickClock(){ const d=new Date(); let h=d.getHours(), m=d.getMinutes(); const ap=h>=12?'PM':'AM'; h=h%12||12;
+  document.getElementById('clock').textContent=h+':'+String(m).padStart(2,'0')+' '+ap; }
+
+/* ---------- Boot ---------- */
+document.querySelectorAll('.navbtn').forEach(n=>n.onclick=()=>go(n.dataset.view));
+(function bootSeq(){
+  let w=0; const bar=document.getElementById('bootbar');
+  const iv=setInterval(()=>{ w+=Math.random()*26+8; bar.style.width=Math.min(100,w)+'%';
+    if(w>=100){ clearInterval(iv); setTimeout(()=>{ document.getElementById('boot').style.display='none'; },250); } },110);
+})();
+seed(); applyBrand(); renderConnStatus(); go('dashboard');
+tickClock(); setInterval(tickClock,1000*20);
+</script>
+</body>
+</html>
